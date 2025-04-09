@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Commission Calculator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #1a1a1a; /* Dark background for a sleek look */
+      color: #fff; /* White text for contrast */
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .calculator {
+      background-color: #f8b400; /* Dubai-inspired gold color */
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      width: 320px;
+    }
+    .calculator h1 {
+      font-size: 24px;
+      text-align: center;
+      color: #1a1a1a; /* Dark text for contrast */
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      color: #1a1a1a;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .btn {
+      width: 100%;
+      padding: 10px;
+      background-color: #1a1a1a; /* Dark button to match the theme */
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background-color: #f8b400; /* Gold color for hover effect */
+    }
+    .results {
+      margin-top: 20px;
+      display: none;
+      background-color: #f8b400;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    .results p {
+      font-size: 16px;
+      color: #1a1a1a;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="calculator">
+    <h1>Commission Calculator</h1>
+
+    <!-- Input Fields -->
+    <div class="form-group">
+      <label for="salePriceAED">Property Sale Price (AED)</label>
+      <input type="number" id="salePriceAED" placeholder="Enter sale price in AED">
+    </div>
+
+    <div class="form-group">
+      <label for="conversionRate">Conversion Rate (AED to GBP)</label>
+      <input type="number" id="conversionRate" value="0.22" placeholder="Enter conversion rate" step="0.01">
+    </div>
+
+    <div class="form-group">
+      <label for="brokerRate">Broker Commission Rate (%)</label>
+      <input type="number" id="brokerRate" value="2" placeholder="Enter broker rate">
+    </div>
+
+    <div class="form-group">
+      <label for="referralRate">Referral Commission Rate (%)</label>
+      <input type="number" id="referralRate" value="0.5" placeholder="Enter referral rate">
+    </div>
+
+    <div class="form-group">
+      <label for="numBrokers">Number of Brokers</label>
+      <input type="number" id="numBrokers" value="1" min="1" placeholder="Enter number of brokers">
+    </div>
+
+    <div class="form-group">
+      <label for="numReferrers">Number of Referrers</label>
+      <input type="number" id="numReferrers" value="1" min="1" placeholder="Enter number of referrers">
+    </div>
+
+    <button class="btn" onclick="calculateCommission()">Calculate</button>
+
+    <!-- Results Section -->
+    <div class="results" id="results">
+      <h2>Results</h2>
+      <p id="brokerCommission"></p>
+      <p id="referralCommission"></p>
+      <p id="brokerNetCommission"></p>
+      <p id="brokerShare"></p>
+      <p id="referralShare"></p>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script>
+    function calculateCommission() {
+      // Get input values
+      const salePriceAED = parseFloat(document.getElementById('salePriceAED').value);
+      const conversionRate = parseFloat(document.getElementById('conversionRate').value);
+      const brokerRate = parseFloat(document.getElementById('brokerRate').value);
+      const referralRate = parseFloat(document.getElementById('referralRate').value);
+      const numBrokers = parseInt(document.getElementById('numBrokers').value);
+      const numReferrers = parseInt(document.getElementById('numReferrers').value);
+
+      // Validate sale price input
+      if (!salePriceAED) {
+        alert("Please enter the property sale price in AED.");
+        return;
+      }
+
+      // Convert sale price from AED to GBP
+      const salePriceInGBP = salePriceAED * conversionRate;
+
+      // Calculate commissions
+      const brokerCommission = (salePriceInGBP * brokerRate) / 100;
+      const referralCommission = (salePriceInGBP * referralRate) / 100;
+      const brokerNetCommission = brokerCommission - referralCommission;
+      const brokerShare = brokerNetCommission / numBrokers;
+      const referralShare = referralCommission / numReferrers;
+
+      // Display results
+      document.getElementById('brokerCommission').innerText = `Total Broker Commission: £${brokerCommission.toFixed(2)}`;
+      document.getElementById('referralCommission').innerText = `Referral Commission: £${referralCommission.toFixed(2)}`;
+      document.getElementById('brokerNetCommission').innerText = `Broker Net Commission: £${brokerNetCommission.toFixed(2)}`;
+      document.getElementById('brokerShare').innerText = `Each Broker Gets: £${brokerShare.toFixed(2)}`;
+      document.getElementById('referralShare').innerText = `Each Referrer Gets: £${referralShare.toFixed(2)}`;
+
+      // Show results section
+      document.getElementById('results').style.display = 'block';
+    }
+
+    // Function to download results as PDF
+    function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.text("Commission Summary", 10, 10);
+      doc.text(`Broker Commission: £${brokerCommission.toFixed(2)}`, 10, 20);
+      doc.text(`Referral Commission: £${referralCommission.toFixed(2)}`, 10, 30);
+      doc.text(`Broker Net Commission: £${brokerNetCommission.toFixed(2)}`, 10, 40);
+      doc.text(`Each Broker Gets: £${brokerShare.toFixed(2)}`, 10, 50);
+      doc.text(`Each Referrer Gets: £${referralShare.toFixed(2)}`, 10, 60);
+      doc.save("commission-summary.pdf");
+    }
+
+    // Function to download results as Excel
+    function downloadExcel() {
+      const data = [
+        ["Metric", "Value"],
+        ["Property Sale Price (AED)", "AED " + salePriceAED.toFixed(2)],
+        ["Property Sale Price (GBP)", "£" + salePriceInGBP.toFixed(2)],
+        ["Broker Commission Rate", brokerRate + "%"],
+        ["Referral Commission Rate", referralRate + "%"],
+        ["Total Broker Commission", "£" + brokerCommission.toFixed(2)],
+        ["Referral Commission", "£" + referralCommission.toFixed(2)],
+        ["Broker Net Commission", "£" + brokerNetCommission.toFixed(2)],
+        ["Each Broker Gets", "£" + brokerShare.toFixed(2)],
+        ["Each Referrer Gets", "£" + referralShare.toFixed(2)],
+      ];
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Summary");
+      XLSX.writeFile(wb, "commission-summary.xlsx");
+    }
+  </script>
+
+</body>
+</html>
